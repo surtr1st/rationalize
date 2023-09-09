@@ -11,7 +11,7 @@ pub fn read_hash<'rh>(files: &Vec<String>) -> Vec<String> {
     hashes
 }
 
-pub fn compare(data: &Vec<String>) {
+pub fn find_duplicates(data: &Vec<String>) {
     let mut set = HashSet::new();
     let mut duplicates = vec![];
     for item in data {
