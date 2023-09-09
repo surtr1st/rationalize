@@ -1,20 +1,24 @@
-use std::collections::hash_map::DefaultHasher;
+use std::collections::{hash_map::DefaultHasher, hash_set::HashSet};
 use std::hash::{Hash, Hasher};
 
-#[derive(Default)]
-struct Rational {
-    data: Vec<String>,
-}
-
 pub fn read_hash(files: Vec<String>) {
-    let mut r = Rational::default();
+    let mut hashes = vec![];
     for file in files {
         let hashing = hash(&file);
-        r.data.push(hashing);
+        hashes.push(hashing);
     }
 }
 
-pub fn compare(data: &Vec<String>) {}
+pub fn compare(data: &Vec<String>) {
+    let mut set = HashSet::new();
+    let mut duplicates = vec![];
+    for item in data {
+        let duplicated = set.insert(item.clone());
+        if duplicated {
+            duplicates.push(item.clone());
+        }
+    }
+}
 
 pub fn create_folder() {}
 
