@@ -22,11 +22,12 @@ pub fn compare(data: &Vec<String>) {
     }
 }
 
-pub fn create_folder(dir: String) {
-    if Path::new(&dir).is_dir() {
-        return;
+pub fn create_folder(dir: String) -> Result<String, String> {
+    let result = Path::new(&dir).is_dir();
+    match result {
+        true => Ok(format!("Created folder!")),
+        false => Err(format!("Folder or directory exists!")),
     }
-    Path::new(&dir);
 }
 
 pub fn transfer_duplication() {}
