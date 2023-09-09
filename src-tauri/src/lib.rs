@@ -1,32 +1,31 @@
-pub mod rationalize {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
-    struct Storage<'s> {
-        data: Vec<&'s str>,
+#[derive(Default)]
+struct Rational {
+    data: Vec<String>,
+}
+
+pub fn read_hash(files: Vec<String>) {
+    let mut r = Rational::default();
+    for file in files {
+        let hashing = hash(&file);
+        r.data.push(hashing);
     }
+}
 
-    #[tauri::command]
-    pub fn read_hash(data: &Vec<String>) {}
+pub fn compare(data: &Vec<String>) {}
 
-    #[tauri::command]
-    pub fn compare(data: &Vec<String>) {}
+pub fn create_folder() {}
 
-    #[tauri::command]
-    pub fn create_folder() {}
+pub fn transfer_duplication() {}
 
-    #[tauri::command]
-    pub fn transfer_duplication() {}
+pub fn export_location() {}
 
-    #[tauri::command]
-    pub fn export_location() {}
+pub fn exec() {}
 
-    #[tauri::command]
-    pub fn exec() {}
-
-    pub fn hash<T: Hash>(t: &T) -> u64 {
-        let mut s = DefaultHasher::new();
-        t.hash(&mut s);
-        s.finish()
-    }
+fn hash<'h, T: Hash>(t: &'h T) -> String {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish().to_string()
 }
