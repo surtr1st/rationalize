@@ -1,5 +1,7 @@
 use std::collections::{hash_map::DefaultHasher, hash_set::HashSet};
+use std::fmt::format;
 use std::hash::{Hash, Hasher};
+use std::path::Path;
 
 pub fn read_hash(files: Vec<String>) {
     let mut hashes = vec![];
@@ -20,7 +22,12 @@ pub fn compare(data: &Vec<String>) {
     }
 }
 
-pub fn create_folder() {}
+pub fn create_folder(dir: String) {
+    if Path::new(&dir).is_dir() {
+        return;
+    }
+    Path::new(&dir);
+}
 
 pub fn transfer_duplication() {}
 
