@@ -2,6 +2,10 @@ pub mod rationalize {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
+    struct Storage<'s> {
+        data: Vec<&'s str>,
+    }
+
     #[tauri::command]
     pub fn read_hash(data: &Vec<String>) {}
 
