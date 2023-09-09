@@ -1,14 +1,14 @@
 use std::collections::{hash_map::DefaultHasher, hash_set::HashSet};
-use std::fmt::format;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
 
-pub fn read_hash(files: Vec<String>) {
+pub fn read_hash<'rh>(files: &Vec<String>) -> Vec<String> {
     let mut hashes = vec![];
     for file in files {
         let hashing = hash(&file);
         hashes.push(hashing);
     }
+    hashes
 }
 
 pub fn compare(data: &Vec<String>) {
