@@ -28,8 +28,11 @@ pub fn find_duplicates(data: &Vec<String>) {
 pub fn create_folder(dir: String) -> Result<String, String> {
     let result = Path::new(&dir).is_dir();
     match result {
-        true => Ok(format!("Created folder!")),
-        false => Err(format!("Folder or directory exists!")),
+        false => {
+            Path::new(&dir);
+            Ok(format!("Created folder!"))
+        }
+        true => Err(format!("Folder or directory exists!")),
     }
 }
 
