@@ -29,6 +29,7 @@ pub fn read_hash_files<'rh>(target_dir: String) -> Result<HashMap<String, String
     Ok(map)
 }
 
+// TODO: Modify find_duplicates logic
 pub fn find_duplicates(data: &Vec<String>) {
     let mut set = HashSet::new();
     let mut duplicates = vec![];
