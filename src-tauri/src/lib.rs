@@ -7,9 +7,9 @@ use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const WINDOWS_FILE_MANAGER: &str = "explorer";
-const LINUX_FILE_MANAGER: &str = "xdg-open";
-const MACOS_FILE_MANAGER: &str = "open";
+const WINDOWS_EXPLORER: &str = "explorer";
+const LINUX_EXPLORER: &str = "xdg-open";
+const MACOS_EXPLORER: &str = "open";
 
 pub fn read_hash<'rh>(files: &Vec<String>) -> Vec<String> {
     let mut hashes = vec![];
@@ -66,13 +66,13 @@ pub fn open_location(target_dir: String) {
     let mut cmd = Command::new("");
     let current_os = env::consts::OS;
     if current_os == "windows" {
-        cmd = Command::new(WINDOWS_FILE_MANAGER);
+        cmd = Command::new(WINDOWS_EXPLORER);
     }
     if current_os == "linux" {
-        cmd = Command::new(LINUX_FILE_MANAGER);
+        cmd = Command::new(LINUX_EXPLORER);
     }
     if current_os == "macos" {
-        cmd = Command::new(MACOS_FILE_MANAGER);
+        cmd = Command::new(MACOS_EXPLORER);
     }
     cmd.arg(&target_dir);
 
