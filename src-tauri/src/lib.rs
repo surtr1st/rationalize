@@ -1,9 +1,10 @@
+use blake3::Hasher;
 use fs_extra::file;
 use rayon::prelude::*;
 use std::collections::{hash_map::DefaultHasher, hash_map::HashMap, hash_set::HashSet};
 use std::env;
-use std::fs;
-use std::hash::{Hash, Hasher};
+use std::fs::{self, File};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -96,6 +97,22 @@ pub fn open_location(target_dir: String) {
 }
 
 pub fn exec() {}
+
+fn hash(file_path: &str) -> Result<String, std::io::Error> {
+    let mut file = File::open(file_path)?;
+    let mut hasher = Hasher::new();
+    let mut buffer = [0u8; 4096];
+
+    loop {
+        let bytes_read = file.read(&mut buffer)?;
+        if bytes_read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..bytes_read]);
+    }
+    let result = hasher.finalize();
+    Ok(format!("{result}"))
+}
 
 fn retrieve_directory_content(dir: &str) -> Vec<PathBuf> {
     fs::read_dir(dir)
