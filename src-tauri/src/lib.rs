@@ -1,6 +1,6 @@
 use fs_extra::file;
 use rayon::prelude::*;
-use std::collections::{hash_map::DefaultHasher, hash_set::HashSet};
+use std::collections::{hash_map::DefaultHasher, hash_map::HashMap, hash_set::HashSet};
 use std::env;
 use std::fs;
 use std::hash::{Hash, Hasher};
@@ -11,13 +11,18 @@ const WINDOWS_EXPLORER: &str = "explorer";
 const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
 
-pub fn read_hash<'rh>(files: &Vec<String>) -> Vec<String> {
-    let mut hashes = vec![];
-    for file in files {
-        let hashing = hash(&file);
-        hashes.push(hashing);
+pub fn read_hash_files<'rh>(target_dir: String) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    let content = fs::read_dir(&target_dir);
+    if let Ok(files) = content {
+        for file in files {
+            let unwrap_file = file.unwrap();
+            let filename = unwrap_file.file_name().to_string_lossy().to_string();
+            let hash_id = hash(&unwrap_file);
+            map.insert(filename, hash_id);
+        }
     }
-    hashes
+    map
 }
 
 pub fn find_duplicates(data: &Vec<String>) {
