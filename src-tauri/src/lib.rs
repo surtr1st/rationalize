@@ -1,7 +1,7 @@
 use blake3::Hasher;
 use fs_extra::file;
 use rayon::prelude::*;
-use std::collections::{hash_map::DefaultHasher, hash_map::HashMap, hash_set::HashSet};
+use std::collections::{hash_map::HashMap, hash_set::HashSet};
 use std::env;
 use std::fs::{self, File};
 use std::io::Read;
@@ -12,18 +12,21 @@ const WINDOWS_EXPLORER: &str = "explorer";
 const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
 
-pub fn read_hash_files<'rh>(target_dir: String) -> HashMap<String, String> {
+pub fn read_hash_files<'rh>(target_dir: String) -> Result<HashMap<String, String>, std::io::Error> {
     let mut map = HashMap::new();
-    let content = fs::read_dir(&target_dir);
-    if let Ok(files) = content {
-        for file in files {
-            let unwrap_file = file.unwrap();
-            let filename = unwrap_file.file_name().to_string_lossy().to_string();
-            let hash_id = hash(&unwrap_file);
-            map.insert(filename, hash_id);
-        }
+    let files = fs::read_dir(&target_dir)?;
+    for item in files {
+        let file = item?;
+        let path = file.path();
+        let name = file.file_name();
+
+        let filepath = path.to_string_lossy();
+        let filename = name.to_string_lossy();
+        let hash_id = hash(&filepath)?;
+
+        map.insert(filename.into_owned(), hash_id);
     }
-    map
+    Ok(map)
 }
 
 pub fn find_duplicates(data: &Vec<String>) {
