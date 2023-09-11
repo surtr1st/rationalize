@@ -1,9 +1,15 @@
-use fs_extra::{dir, file};
+use fs_extra::file;
 use rayon::prelude::*;
 use std::collections::{hash_map::DefaultHasher, hash_set::HashSet};
+use std::env;
 use std::fs;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
+use std::process::Command;
+
+const WINDOWS_FILE_MANAGER: &str = "explorer";
+const LINUX_FILE_MANAGER: &str = "xdg-open";
+const MACOS_FILE_MANAGER: &str = "open";
 
 pub fn read_hash<'rh>(files: &Vec<String>) -> Vec<String> {
     let mut hashes = vec![];
@@ -56,7 +62,33 @@ pub fn transfer_duplication(target_dir: String) {
         })
 }
 
-pub fn export_location() {}
+pub fn export_location(target_dir: String) {
+    let mut cmd = Command::new("");
+    let current_os = env::consts::OS;
+    if current_os == "windows" {
+        cmd = Command::new(WINDOWS_FILE_MANAGER);
+    }
+    if current_os == "linux" {
+        cmd = Command::new(LINUX_FILE_MANAGER);
+    }
+    if current_os == "macos" {
+        cmd = Command::new(MACOS_FILE_MANAGER);
+    }
+    cmd.arg(&target_dir);
+
+    match cmd.status() {
+        Ok(status) => {
+            if status.success() {
+                println!("File explorer opened successfully.");
+            } else {
+                eprintln!("Failed to open file explorer.");
+            }
+        }
+        Err(err) => {
+            eprintln!("Error opening file explorer: {:?}", err);
+        }
+    }
+}
 
 pub fn exec() {}
 
