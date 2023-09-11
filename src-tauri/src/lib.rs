@@ -97,12 +97,6 @@ pub fn open_location(target_dir: String) {
 
 pub fn exec() {}
 
-fn hash<'h, T: Hash>(t: &'h T) -> String {
-    let mut s = DefaultHasher::new();
-    t.hash(&mut s);
-    s.finish().to_string()
-}
-
 fn retrieve_directory_content(dir: &str) -> Vec<PathBuf> {
     fs::read_dir(dir)
         .expect("should read the directory specified!")
