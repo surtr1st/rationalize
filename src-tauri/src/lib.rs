@@ -62,7 +62,7 @@ pub fn transfer_duplication(target_dir: String) {
         })
 }
 
-pub fn export_location(target_dir: String) {
+pub fn open_location(target_dir: String) {
     let mut cmd = Command::new("");
     let current_os = env::consts::OS;
     if current_os == "windows" {
