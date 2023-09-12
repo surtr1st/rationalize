@@ -12,7 +12,7 @@ const WINDOWS_EXPLORER: &str = "explorer";
 const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
 
-pub fn read_hash_files<'rh>(target_dir: String) -> Result<HashMap<String, String>, std::io::Error> {
+pub fn read_hash_files(target_dir: String) -> Result<HashMap<String, String>, std::io::Error> {
     let mut map = HashMap::new();
     let files = fs::read_dir(&target_dir)?;
     for item in files {
