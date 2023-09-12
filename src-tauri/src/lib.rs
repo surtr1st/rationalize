@@ -44,8 +44,8 @@ pub fn create_folder(dir: String) -> Result<String, String> {
     let result = Path::new(&dir).is_dir();
     match result {
         false => {
-            Path::new(&dir);
-            Ok(format!("Created folder!"))
+            let created_dir = Path::new(&dir);
+            Ok(format!("Created folder: {}", created_dir.display()))
         }
         true => Err(format!("Folder or directory exists!")),
     }
