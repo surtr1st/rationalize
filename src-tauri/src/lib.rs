@@ -13,7 +13,7 @@ const WINDOWS_EXPLORER: &str = "explorer";
 const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
 
-pub fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, Error> {
+fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, Error> {
     let mut map = HashMap::new();
     let files = fs::read_dir(&target_dir)?;
     for item in files {
@@ -30,7 +30,7 @@ pub fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, Erro
     Ok(map)
 }
 
-pub fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
+fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
     let mut unique_values_set = HashSet::new();
     let mut duplicates = vec![];
     for (key, value) in data {
@@ -41,14 +41,14 @@ pub fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
     duplicates
 }
 
-pub fn create_folder(dir: &str) -> Result<(), Error> {
+fn create_folder(dir: &str) -> Result<(), Error> {
     if !Path::new(dir).is_dir() {
         fs::create_dir(dir)?;
     }
     Ok(())
 }
 
-pub fn transfer_duplication(target_dir: &str) {
+fn transfer_duplication(target_dir: &str) {
     retrieve_directory_content(&target_dir)
         .par_iter()
         .for_each(|item| {
@@ -68,7 +68,7 @@ pub fn transfer_duplication(target_dir: &str) {
         })
 }
 
-pub fn open_location(target_dir: String) {
+fn open_location(target_dir: &str) {
     let mut cmd = Command::new("");
     let current_os = env::consts::OS;
     if current_os == "windows" {
@@ -103,6 +103,6 @@ pub fn exec(target_dir: String) -> Result<String, Error> {
         create_folder("./duplicates")?;
     }
     transfer_duplication(&target_dir);
-
-    Ok(String::from(""))
+    open_location(&target_dir);
+    Ok(String::from("Successfully executed!"))
 }
