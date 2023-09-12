@@ -13,7 +13,7 @@ const WINDOWS_EXPLORER: &str = "explorer";
 const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
 
-pub fn read_hash_files(target_dir: String) -> Result<HashMap<String, String>, Error> {
+pub fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, Error> {
     let mut map = HashMap::new();
     let files = fs::read_dir(&target_dir)?;
     for item in files {
@@ -48,7 +48,7 @@ pub fn create_folder(dir: &str) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn transfer_duplication(target_dir: String) {
+pub fn transfer_duplication(target_dir: &str) {
     retrieve_directory_content(&target_dir)
         .par_iter()
         .for_each(|item| {
@@ -97,11 +97,12 @@ pub fn open_location(target_dir: String) {
 }
 
 pub fn exec(target_dir: String) -> Result<String, Error> {
-    let hashes = read_hash_files(target_dir)?;
+    let hashes = read_hash_files(&target_dir)?;
     let duplicates = find_duplicates(&hashes);
     if !duplicates.is_empty() {
         create_folder("./duplicates")?;
     }
+    transfer_duplication(&target_dir);
 
     Ok(String::from(""))
 }
