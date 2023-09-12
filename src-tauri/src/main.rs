@@ -14,16 +14,16 @@ fn main() {
 
 #[tauri::command]
 fn exec(target_dir: String) -> Result<String, String> {
-    let hashes = read_hash_files(&target_dir).unwrap();
+    let hashes = read_hash_files(&target_dir);
     if let Ok(hash_content) = hashes {
-        let duplicates = find_duplicates(&hashes);
+        let duplicates = find_duplicates(&hash_content);
         if !duplicates.is_empty() {
             let transferred_folder = format!("{}/duplicates", &target_dir);
             create_folder(&transferred_folder).unwrap();
             transfer_duplication(&target_dir);
             open_location(&target_dir);
         }
+        return Ok(String::from("Successfully executed!"));
     }
-
-    Ok(String::from("Successfully executed!"))
+    Err(String::from("An error has occured!"))
 }
