@@ -12,6 +12,7 @@ fn main() {
         .expect("error while running tauri application");
 }
 
+// STATUS: Untested
 #[tauri::command]
 fn exec(target_dir: String) -> Result<String, String> {
     let hash_files = read_hash_files(&target_dir);
