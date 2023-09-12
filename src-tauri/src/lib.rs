@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use std::collections::{hash_map::HashMap, hash_set::HashSet};
 use std::env;
 use std::fs;
-use std::io::{Error, ErrorKind};
+use std::io::Error;
 use std::path::Path;
 use std::process::Command;
 
@@ -41,9 +41,9 @@ pub fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
     duplicates
 }
 
-pub fn create_folder(dir: String) {
-    if !Path::new(&dir).is_dir() {
-        Path::new(&dir);
+pub fn create_folder(dir: &str) {
+    if !Path::new(dir).is_dir() {
+        fs::create_dir(dir);
     }
 }
 
@@ -99,6 +99,8 @@ pub fn exec(target_dir: String) -> Result<String, Error> {
     let hashes = read_hash_files(target_dir)?;
     let duplicates = find_duplicates(&hashes);
     if !duplicates.is_empty() {
-        create_folder(String::from("./duplicates"))?;
+        create_folder("./duplicates");
     }
+
+    Ok(String::from(""))
 }
