@@ -74,7 +74,7 @@ pub fn transfer_duplication(target_dir: &str) {
         })
 }
 
-pub fn open_location(target_dir: &str) {
+pub fn open_location(target_dir: &str) -> Result<String, String> {
     let mut cmd = Command::new("");
     let current_os = env::consts::OS;
     if current_os == "windows" {
@@ -91,13 +91,10 @@ pub fn open_location(target_dir: &str) {
     match cmd.status() {
         Ok(status) => {
             if status.success() {
-                println!("File explorer opened successfully.");
-            } else {
-                eprintln!("Failed to open file explorer.");
+                return Ok(String::from("File explorer opened successfully."));
             }
+            return Err(String::from("Failed to open file explorer."));
         }
-        Err(err) => {
-            eprintln!("Error opening file explorer: {:?}", err);
-        }
+        Err(err) => panic!("Error opening file explorer: {:?}", err),
     }
 }
