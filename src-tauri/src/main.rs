@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::time::Instant;
+
 use rationalize::{
     create_folder, find_duplicates, open_location, read_hash_files, transfer_duplication,
 };
@@ -15,6 +17,7 @@ fn main() {
 // STATUS: Untested
 #[tauri::command]
 fn exec(target_dir: String) -> Result<String, String> {
+    let start = Instant::now();
     let hash_files = read_hash_files(&target_dir);
     if let Ok(hash_content) = hash_files {
         let duplicates = find_duplicates(&hash_content);
@@ -24,7 +27,11 @@ fn exec(target_dir: String) -> Result<String, String> {
             transfer_duplication(&target_dir);
             open_location(&target_dir)?;
         }
-        return Ok(String::from("Successfully executed!"));
+        let duration = start.elapsed();
+        return Ok(format!(
+            "Successfully executed! Finished in: {:?}",
+            duration
+        ));
     }
     Err(String::from("An error has occured!"))
 }
