@@ -41,17 +41,9 @@ pub fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
     duplicates
 }
 
-pub fn create_folder(dir: String) -> Result<String, Error> {
-    let result = Path::new(&dir).is_dir();
-    match result {
-        false => {
-            let created_dir = Path::new(&dir);
-            Ok(format!("Created folder: {}", created_dir.display()))
-        }
-        true => Err(Error::new(
-            ErrorKind::AlreadyExists,
-            "Folder or directory is already exists!",
-        )),
+pub fn create_folder(dir: String) {
+    if !Path::new(&dir).is_dir() {
+        Path::new(&dir);
     }
 }
 
