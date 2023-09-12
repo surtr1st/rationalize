@@ -13,24 +13,30 @@ const WINDOWS_EXPLORER: &str = "explorer";
 const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
 
-fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, Error> {
+pub fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, String> {
     let mut map = HashMap::new();
-    let files = fs::read_dir(&target_dir)?;
-    for item in files {
-        let file = item?;
-        let path = file.path();
-        let name = file.file_name();
+    let files = match fs::read_dir(&target_dir) {
+        Ok(content) => content,
+        Err(read_file_error) => panic!("{read_file_error}"),
+    };
+    for file in files {
+        if let Ok(item) = file {
+            let path = item.path();
+            let name = item.file_name();
 
-        let filepath = path.to_string_lossy();
-        let filename = name.to_string_lossy();
-        let hash_id = hash(&filepath)?;
-
-        map.insert(filename.into_owned(), hash_id);
+            let filepath = path.to_string_lossy();
+            let filename = name.to_string_lossy();
+            let hash_content = match hash(&filepath) {
+                Ok(content) => content,
+                Err(hashing_error) => panic!("{hashing_error}"),
+            };
+            map.insert(filename.into_owned(), hash_content);
+        }
     }
     Ok(map)
 }
 
-fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
+pub fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
     let mut unique_values_set = HashSet::new();
     let mut duplicates = vec![];
     for (key, value) in data {
@@ -41,14 +47,14 @@ fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
     duplicates
 }
 
-fn create_folder(dir: &str) -> Result<(), Error> {
+pub fn create_folder(dir: &str) -> Result<(), Error> {
     if !Path::new(dir).is_dir() {
         fs::create_dir(dir)?;
     }
     Ok(())
 }
 
-fn transfer_duplication(target_dir: &str) {
+pub fn transfer_duplication(target_dir: &str) {
     retrieve_directory_content(&target_dir)
         .par_iter()
         .for_each(|item| {
@@ -68,7 +74,7 @@ fn transfer_duplication(target_dir: &str) {
         })
 }
 
-fn open_location(target_dir: &str) {
+pub fn open_location(target_dir: &str) {
     let mut cmd = Command::new("");
     let current_os = env::consts::OS;
     if current_os == "windows" {
@@ -94,16 +100,4 @@ fn open_location(target_dir: &str) {
             eprintln!("Error opening file explorer: {:?}", err);
         }
     }
-}
-
-pub fn exec(target_dir: String) -> Result<String, Error> {
-    let hashes = read_hash_files(&target_dir)?;
-    let duplicates = find_duplicates(&hashes);
-    if !duplicates.is_empty() {
-        let transferred_folder = format!("{}/duplicates", &target_dir);
-        create_folder(&transferred_folder)?;
-        transfer_duplication(&target_dir);
-        open_location(&target_dir);
-    }
-    Ok(String::from("Successfully executed!"))
 }
