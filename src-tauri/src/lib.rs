@@ -101,8 +101,8 @@ pub fn exec(target_dir: String) -> Result<String, Error> {
     let duplicates = find_duplicates(&hashes);
     if !duplicates.is_empty() {
         create_folder("./duplicates")?;
+        transfer_duplication(&target_dir);
+        open_location(&target_dir);
     }
-    transfer_duplication(&target_dir);
-    open_location(&target_dir);
     Ok(String::from("Successfully executed!"))
 }
