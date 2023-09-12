@@ -41,10 +41,11 @@ pub fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
     duplicates
 }
 
-pub fn create_folder(dir: &str) {
+pub fn create_folder(dir: &str) -> Result<(), Error> {
     if !Path::new(dir).is_dir() {
-        fs::create_dir(dir);
+        fs::create_dir(dir)?;
     }
+    Ok(())
 }
 
 pub fn transfer_duplication(target_dir: String) {
@@ -99,7 +100,7 @@ pub fn exec(target_dir: String) -> Result<String, Error> {
     let hashes = read_hash_files(target_dir)?;
     let duplicates = find_duplicates(&hashes);
     if !duplicates.is_empty() {
-        create_folder("./duplicates");
+        create_folder("./duplicates")?;
     }
 
     Ok(String::from(""))
