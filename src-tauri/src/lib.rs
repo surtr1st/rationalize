@@ -29,16 +29,15 @@ pub fn read_hash_files<'rh>(target_dir: String) -> Result<HashMap<String, String
     Ok(map)
 }
 
-// TODO: Modify find_duplicates logic
-pub fn find_duplicates(data: &Vec<String>) {
-    let mut set = HashSet::new();
+pub fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
+    let mut unique_values_set = HashSet::new();
     let mut duplicates = vec![];
-    for item in data {
-        let duplicated = set.insert(item.clone());
-        if duplicated {
-            duplicates.push(item.clone());
+    for (key, value) in data {
+        if !unique_values_set.insert(value.as_str()) {
+            duplicates.push(key.as_str());
         }
     }
+    duplicates
 }
 
 pub fn create_folder(dir: String) -> Result<String, String> {
