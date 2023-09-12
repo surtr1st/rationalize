@@ -100,7 +100,8 @@ pub fn exec(target_dir: String) -> Result<String, Error> {
     let hashes = read_hash_files(&target_dir)?;
     let duplicates = find_duplicates(&hashes);
     if !duplicates.is_empty() {
-        create_folder("./duplicates")?;
+        let transferred_folder = format!("{}/duplicates", &target_dir);
+        create_folder(&transferred_folder)?;
         transfer_duplication(&target_dir);
         open_location(&target_dir);
     }
