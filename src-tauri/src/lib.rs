@@ -5,6 +5,7 @@ use rayon::prelude::*;
 use std::collections::{hash_map::HashMap, hash_set::HashSet};
 use std::env;
 use std::fs;
+use std::io::{Error, ErrorKind};
 use std::path::Path;
 use std::process::Command;
 
@@ -12,7 +13,7 @@ const WINDOWS_EXPLORER: &str = "explorer";
 const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
 
-pub fn read_hash_files(target_dir: String) -> Result<HashMap<String, String>, std::io::Error> {
+pub fn read_hash_files(target_dir: String) -> Result<HashMap<String, String>, Error> {
     let mut map = HashMap::new();
     let files = fs::read_dir(&target_dir)?;
     for item in files {
@@ -40,14 +41,17 @@ pub fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
     duplicates
 }
 
-pub fn create_folder(dir: String) -> Result<String, String> {
+pub fn create_folder(dir: String) -> Result<String, Error> {
     let result = Path::new(&dir).is_dir();
     match result {
         false => {
             let created_dir = Path::new(&dir);
             Ok(format!("Created folder: {}", created_dir.display()))
         }
-        true => Err(format!("Folder or directory exists!")),
+        true => Err(Error::new(
+            ErrorKind::AlreadyExists,
+            "Folder or directory is already exists!",
+        )),
     }
 }
 
@@ -99,4 +103,10 @@ pub fn open_location(target_dir: String) {
     }
 }
 
-pub fn exec() {}
+pub fn exec(target_dir: String) -> Result<String, Error> {
+    let hashes = read_hash_files(target_dir)?;
+    let duplicates = find_duplicates(&hashes);
+    if !duplicates.is_empty() {
+        create_folder(String::from("./duplicates"))?;
+    }
+}
