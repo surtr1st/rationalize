@@ -19,12 +19,22 @@ pub fn App(cx: Scope) -> impl IntoView {
     let (target_dir, set_target_dir) = create_signal(cx, String::new());
     let (visible, set_visible) = create_signal(cx, false);
 
+    let exclude_file_from_dir_path = |dir: &str| -> String {
+        let mut segments = dir.split('\\').collect::<Vec<_>>();
+        segments.pop();
+        segments.join("\\")
+    };
+
     let handle_upload_directory = move |event: leptos::ev::Event| {
-        set_target_dir.update(|value| *value = event_target_value(&event).to_string());
+        let target_value = event_target_value(&event);
+        let directory = exclude_file_from_dir_path(&target_value);
+        set_target_dir.set(directory);
 
         if !target_dir.get().is_empty() {
-            set_visible.update(|value| *value = true);
+            set_visible.set(true);
+            return;
         }
+        set_visible.set(false);
     };
 
     let handle_execution = move |event: leptos::ev::MouseEvent| {
