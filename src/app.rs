@@ -10,7 +10,7 @@ extern "C" {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-struct RationalizeArgs<'r> {
+struct ExecutionArgs<'r> {
     target_dir: &'r str,
 }
 
@@ -27,27 +27,27 @@ pub fn App(cx: Scope) -> impl IntoView {
         }
     };
 
-    let execute_button = move || {
-        if visible.get() {
-            view! { cx, <button class="exec-button">"Execute"</button> }
-        } else {
-            view! { cx, <button class="hidden-exec-button"></button> }
-        }
-    };
-
-    let handle_execution = move |event: leptos::ev::SubmitEvent| {
+    let handle_execution = move |event: leptos::ev::MouseEvent| {
         event.prevent_default();
         spawn_local(async move {
             if target_dir.get().is_empty() {
                 return;
             }
 
-            if let Ok(args) = to_value(&RationalizeArgs {
+            if let Ok(args) = to_value(&ExecutionArgs {
                 target_dir: &target_dir.get(),
             }) {
                 invoke("exec", args).await.as_string().unwrap();
             }
         });
+    };
+
+    let execute_button = move || {
+        if visible.get() {
+            view! { cx, <button type="submit" class="exec-button" on:click=handle_execution>"Execute"</button> }
+        } else {
+            view! { cx, <button class="hidden-exec-button"></button> }
+        }
     };
 
     view! { cx,
