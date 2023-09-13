@@ -16,16 +16,16 @@ fn main() {
 
 // STATUS: Untested
 #[tauri::command]
-fn exec(target_dir: String) -> Result<String, String> {
+fn exec(target_dir: &str) -> Result<String, String> {
     let start = Instant::now();
-    let hash_files = read_hash_files(&target_dir);
+    let hash_files = read_hash_files(target_dir);
     if let Ok(hash_content) = hash_files {
         let duplicates = find_duplicates(&hash_content);
         if !duplicates.is_empty() {
-            let transferred_folder = format!("{}/duplicates", &target_dir);
+            let transferred_folder = format!("{}/duplicates", target_dir);
             create_folder(&transferred_folder).unwrap();
-            transfer_duplication(&target_dir);
-            open_location(&target_dir)?;
+            transfer_duplication(target_dir);
+            open_location(target_dir)?;
         }
         let duration = start.elapsed();
         return Ok(format!(
