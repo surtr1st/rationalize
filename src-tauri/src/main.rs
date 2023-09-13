@@ -1,11 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::time::Instant;
-
 use rationalize::{
     create_folder, find_duplicates, open_location, read_hash_files, transfer_duplication,
 };
+use std::time::Instant;
 
 fn main() {
     tauri::Builder::default()
@@ -13,6 +12,10 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+// TODO: Implementing folder picker dialog
+#[tauri::command]
+fn select_directory() {}
 
 // STATUS: Untested
 #[tauri::command]
