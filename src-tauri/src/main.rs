@@ -13,10 +13,6 @@ fn main() {
         .expect("error while running tauri application");
 }
 
-// TODO: Implementing folder picker dialog
-#[tauri::command]
-fn select_directory() {}
-
 // STATUS: Untested
 #[tauri::command]
 fn exec(target_dir: &str) -> Result<String, String> {
