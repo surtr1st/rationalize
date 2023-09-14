@@ -1,5 +1,6 @@
 //use leptos::leptos_dom::ev::{SubmitEvent};
 use leptos::*;
+use leptos::leptos_dom::ev;
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
 
@@ -7,11 +8,20 @@ use wasm_bindgen::prelude::*;
 extern "C" {
     #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "tauri"])]
     async fn invoke(cmd: &str, args: JsValue) -> JsValue;
+
+    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "dialog"])]
+    async fn open(args: JsValue) -> JsValue;
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-struct ExecutionArgs<'r> {
-    target_dir: &'r str,
+struct ExecutionArgs<'e> {
+    target_dir: &'e str,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct OpenDialogOptions<'odo> {
+    directory: bool,
+    title: &'odo str
 }
 
 #[component]
@@ -25,7 +35,7 @@ pub fn App(cx: Scope) -> impl IntoView {
         segments.join("\\")
     };
 
-    let handle_upload_directory = move |event: leptos::ev::Event| {
+    let handle_upload_directory = move |event: ev::Event| {
         let target_value = event_target_value(&event);
         let directory = exclude_file_from_dir_path(&target_value);
         set_target_dir.set(directory);
@@ -37,24 +47,33 @@ pub fn App(cx: Scope) -> impl IntoView {
         set_visible.set(false);
     };
 
-    let handle_execution = move |event: leptos::ev::MouseEvent| {
+    let handle_execution = move |event: ev::MouseEvent| {
         event.prevent_default();
         spawn_local(async move {
             if target_dir.get().is_empty() {
                 return;
             }
-
-            if let Ok(args) = to_value(&ExecutionArgs {
+            let args = to_value(&ExecutionArgs {
                 target_dir: &target_dir.get(),
-            }) {
-                invoke("exec", args).await.as_string().unwrap();
-            }
+            }).unwrap();
+            invoke("exec", args).await;
         });
+    };
+
+    let handle_open_dir = move |event: ev::MouseEvent| {
+        event.prevent_default();
+        spawn_local(async move {
+            let args = to_value(&OpenDialogOptions {
+                directory: true,
+                title: "Open this bit"
+            }).unwrap();
+            open(args).await;
+        }) 
     };
 
     let execute_button = move || {
         if visible.get() {
-            view! { cx, <button type="submit" class="exec-button" on:click=handle_execution>"Execute"</button> }
+            view! { cx, <button class="exec-button" on:click=handle_execution>"Execute"</button> }
         } else {
             view! { cx, <button class="hidden-exec-button"></button> }
         }
@@ -81,6 +100,7 @@ pub fn App(cx: Scope) -> impl IntoView {
                     "Choose Directory"
                 </label>
                 {execute_button}
+                <button on:click=handle_open_dir>"Open from Tauri API"</button>
             </div>
         </main>
     }
