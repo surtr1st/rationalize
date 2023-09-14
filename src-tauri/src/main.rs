@@ -4,11 +4,11 @@
 use rationalize::{
     create_folder, find_duplicates, open_location, read_hash_files, transfer_duplication,
 };
-use std::time::Instant;
+use std::{fs, time::Instant};
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![exec])
+        .invoke_handler(tauri::generate_handler![exec, retrieve_total_files])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -33,4 +33,9 @@ fn exec(target_dir: &str) -> Result<String, String> {
         ));
     }
     Err(String::from("An error has occured!"))
+}
+
+#[tauri::command]
+fn retrieve_total_files(target_dir: &str) -> f64 {
+    fs::read_dir(target_dir).unwrap().count() as f64
 }
