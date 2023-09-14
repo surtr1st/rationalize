@@ -108,6 +108,7 @@ pub fn App(cx: Scope) -> impl IntoView {
         }
     };
 
+    // TODO: Implementing execution progress
     view! { cx,
         <main class="container">
             <input
