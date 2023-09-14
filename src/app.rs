@@ -29,24 +29,6 @@ pub fn App(cx: Scope) -> impl IntoView {
     let (target_dir, set_target_dir) = create_signal(cx, String::new());
     let (visible, set_visible) = create_signal(cx, false);
 
-    let exclude_file_from_dir_path = |dir: &str| -> String {
-        let mut segments = dir.split('\\').collect::<Vec<_>>();
-        segments.pop();
-        segments.join("\\")
-    };
-
-    let handle_upload_directory = move |event: ev::Event| {
-        let target_value = event_target_value(&event);
-        let directory = exclude_file_from_dir_path(&target_value);
-        set_target_dir.set(directory);
-
-        if !target_dir.get().is_empty() {
-            set_visible.set(true);
-            return;
-        }
-        set_visible.set(false);
-    };
-
     let handle_execution = move |event: ev::MouseEvent| {
         event.prevent_default();
         spawn_local(async move {
@@ -63,11 +45,20 @@ pub fn App(cx: Scope) -> impl IntoView {
     let handle_open_dir = move |event: ev::MouseEvent| {
         event.prevent_default();
         spawn_local(async move {
-            let args = to_value(&OpenDialogOptions {
+            if let Ok(args) = to_value(&OpenDialogOptions {
                 directory: true,
-                title: "Open this bit"
-            }).unwrap();
-            open(args).await;
+                title: "Choose directory to be executed"
+            }) {
+                if let Some(dir) = open(args).await.as_string() {
+                    if dir.is_empty() {
+                        set_visible.set(false);
+                        return;
+                    }
+                    set_target_dir.set(dir);
+                    set_visible.set(true);
+                }
+            }
+            
         }) 
     };
 
@@ -90,17 +81,8 @@ pub fn App(cx: Scope) -> impl IntoView {
                 value=move || target_dir.get()
             />
             <div class="action-section">
-                <label class="directory-upload-button">
-                    <input
-                        type="file"
-                        class="directory-uploader"
-                        name="target-dir"
-                        on:change=handle_upload_directory
-                    />
-                    "Choose Directory"
-                </label>
+                <button on:click=handle_open_dir>"Choose Directory"</button>
                 {execute_button}
-                <button on:click=handle_open_dir>"Open from Tauri API"</button>
             </div>
         </main>
     }
