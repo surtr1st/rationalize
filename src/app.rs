@@ -19,6 +19,11 @@ struct ExecutionArgs<'e> {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
+struct Directory<'d> {
+    path: &'d str,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
 struct OpenDialogOptions<'odo> {
     directory: bool,
     title: &'odo str
@@ -27,20 +32,8 @@ struct OpenDialogOptions<'odo> {
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
     let (target_dir, set_target_dir) = create_signal(cx, String::new());
+    let (total_files, set_total_files) = create_signal(cx, 0f64);
     let (visible, set_visible) = create_signal(cx, false);
-
-    let handle_execution = move |event: ev::MouseEvent| {
-        event.prevent_default();
-        spawn_local(async move {
-            if target_dir.get().is_empty() {
-                return;
-            }
-            let args = to_value(&ExecutionArgs {
-                target_dir: &target_dir.get(),
-            }).unwrap();
-            invoke("exec", args).await;
-        });
-    };
 
     let handle_open_dir = move |event: ev::MouseEvent| {
         event.prevent_default();
@@ -56,11 +49,30 @@ pub fn App(cx: Scope) -> impl IntoView {
                     }
                     set_target_dir.set(dir);
                     set_visible.set(true);
+
+                    if let Ok(arg) = to_value(&Directory { path: &target_dir.get() }) {
+                        if let Some(total) = invoke("retrieve_total_files", arg).await.as_f64() {
+                            set_total_files.set(total);
+                        }
+                    }
                 }
             }
-            
         }) 
     };
+
+    let handle_execution = move |event: ev::MouseEvent| {
+        event.prevent_default();
+        spawn_local(async move {
+            if target_dir.get().is_empty() {
+                return;
+            }
+            let args = to_value(&ExecutionArgs {
+                target_dir: &target_dir.get(),
+            }).unwrap();
+            invoke("exec", args).await;
+        });
+    };
+ 
 
     let execute_button = move || {
         if visible.get() {
@@ -80,6 +92,9 @@ pub fn App(cx: Scope) -> impl IntoView {
                 readonly="true"
                 value=move || target_dir.get()
             />
+            <label class="total-file-label">"Total files in "</label>
+            {move || target_dir.get()}
+            <h2 class="total-file">{move || total_files.get()}</h2>
             <div class="action-section">
                 <button on:click=handle_open_dir>"Choose Directory"</button>
                 {execute_button}
