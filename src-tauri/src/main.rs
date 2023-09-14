@@ -36,6 +36,6 @@ fn exec(target_dir: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn retrieve_total_files(target_dir: &str) -> f64 {
-    fs::read_dir(target_dir).unwrap().count() as f64
+fn retrieve_total_files(path: &str) -> f64 {
+    fs::read_dir(path).unwrap().count() as f64
 }
