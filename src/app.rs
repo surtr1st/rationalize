@@ -1,76 +1,90 @@
-use leptos::leptos_dom::ev::{SubmitEvent};
 use leptos::*;
-use serde::{Deserialize, Serialize};
+use leptos::leptos_dom::ev;
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
+use crate::wasm_bingen_tauri_api::*;
+use crate::types::*;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "tauri"])]
-    async fn invoke(cmd: &str, args: JsValue) -> JsValue;
-}
-
-#[derive(Serialize, Deserialize)]
-struct GreetArgs<'a> {
-    name: &'a str,
-}
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
-    let (name, set_name) = create_signal(cx, String::new());
-    let (greet_msg, set_greet_msg) = create_signal(cx, String::new());
+    let (target_dir, set_target_dir) = create_signal(cx, String::new());
+    let (total_items, set_total_items) = create_signal(cx, String::new());
+    let (visible, set_visible) = create_signal(cx, false);
 
-    let update_name = move |ev| {
-        let v = event_target_value(&ev);
-        set_name.set(v);
+    let handle_open_dir = move |event: ev::MouseEvent| {
+        event.prevent_default();
+        spawn_local(async move {
+            if let Ok(args) = to_value(&OpenDialogOptions {
+                directory: true,
+                title: "Choose directory to be executed"
+            }) {
+                if let Some(dir) = open(args).await.as_string() {
+                    if dir.is_empty() {
+                        set_visible.set(false);
+                        return;
+                    }
+                    set_target_dir.set(dir);
+                    set_visible.set(true);
+
+                    if let Ok(arg) = to_value(&Directory { path: &target_dir.get() }) {
+                        let result = invoke("retrieve_total_items", arg).await;
+                        let js_value = JsValue::from(result);
+                        if let Some(value) =  DirItems::extract_object(js_value).await {
+                            let total_in_text = format!("Folders: {}, Files: {}", value.folders, value.files);
+                            set_total_items.set(total_in_text);
+                        }
+                    }
+                }
+            }
+        }) 
     };
 
-    let greet = move |ev: SubmitEvent| {
-        ev.prevent_default();
+    let handle_execution = move |event: ev::MouseEvent| {
+        event.prevent_default();
         spawn_local(async move {
-            if name.get().is_empty() {
+            if target_dir.get().is_empty() {
                 return;
             }
-
-            let args = to_value(&GreetArgs { name: &name.get() }).unwrap();
-            // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-            let new_msg = invoke("greet", args).await.as_string().unwrap();
-            set_greet_msg.set(new_msg);
+            if let Ok(args) = to_value(&ExecutionArgs {
+                target_dir: &target_dir.get(),
+            }) {
+                if let Some(result) = invoke("exec", args).await.as_string() {
+                    if let Ok(options) = to_value(&MessageDialogOptions { title: "Notify" }) {
+                        message(&result, options).await;
+                    }
+                }
+            }
         });
     };
+ 
 
+    let execute_button = move || {
+        if visible.get() {
+            view! { cx, <button class="exec-button" on:click=handle_execution>"Execute"</button> }
+        } else {
+            view! { cx, <button class="hidden-exec-button"></button> }
+        }
+    };
+
+    // TODO: Implementing execution progress
     view! { cx,
         <main class="container">
-            <div class="row">
-                <a href="https://tauri.app" target="_blank">
-                    <img src="public/tauri.svg" class="logo tauri" alt="Tauri logo"/>
-                </a>
-                <a href="https://docs.rs/leptos/" target="_blank">
-                    <img src="public/leptos.svg" class="logo leptos" alt="Leptos logo"/>
-                </a>
+            <input
+                type="text"
+                name="dir-holder"
+                class="directory-placeholder"
+                placeholder="Directory"
+                readonly="true"
+                value=move || target_dir.get()
+            />
+            <label class="total-items-label">"Total items in surface "</label>
+            {move || target_dir.get()}
+            <h2 class="total-items">{move || total_items.get()}</h2>
+            <div class="action-section">
+                <button on:click=handle_open_dir>"Choose Directory"</button>
+                {execute_button}
             </div>
-
-            <p>"Click on the Tauri and Leptos logos to learn more."</p>
-
-            <p>
-                "Recommended IDE setup: "
-                <a href="https://code.visualstudio.com/" target="_blank">"VS Code"</a>
-                " + "
-                <a href="https://github.com/tauri-apps/tauri-vscode" target="_blank">"Tauri"</a>
-                " + "
-                <a href="https://github.com/rust-lang/rust-analyzer" target="_blank">"rust-analyzer"</a>
-            </p>
-
-            <form class="row" on:submit=greet>
-                <input
-                    id="greet-input"
-                    placeholder="Enter a name..."
-                    on:input=update_name
-                />
-                <button type="submit">"Greet"</button>
-            </form>
-
-            <p><b>{ move || greet_msg.get() }</b></p>
         </main>
     }
 }
