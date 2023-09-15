@@ -2,63 +2,9 @@ use leptos::*;
 use leptos::leptos_dom::ev;
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use js_sys::{Reflect, Object};
+use crate::wasm_bingen_tauri_api::*;
+use crate::types::*;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "tauri"])]
-    async fn invoke(cmd: &str, args: JsValue) -> JsValue;
-
-    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "dialog"])]
-    async fn open(args: JsValue) -> JsValue;
-
-    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "dialog"])]
-    async fn message(message: &str, args: JsValue) -> JsValue;
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-struct ExecutionArgs<'e> {
-    target_dir: &'e str,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-struct Directory<'d> {
-    path: &'d str,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-struct OpenDialogOptions<'odo> {
-    directory: bool,
-    title: &'odo str
-}
-
-#[derive(serde::Deserialize)]
-struct DirItems {
-    folders: f64,
-    files: f64
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-struct MessageDialogOptions<'mdo> {
-    title: &'mdo str,
-}
-
-async fn extract_object_from_dir_items(js_value: JsValue) -> Option<DirItems> {
-    let js_object = js_value.dyn_into::<Object>().ok()?;
-    
-    let files = {
-        let files_prop = Reflect::get(&js_object, &"files".into()).ok()?;
-        files_prop.as_f64().unwrap_or(0.0) as f64
-    };
-    
-    let folders = {
-        let folder_prop = Reflect::get(&js_object, &"folder".into()).ok()?;
-        folder_prop.as_f64().unwrap_or(0.0) as f64
-    };
-
-    Some(DirItems { folders, files })
-}
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
@@ -84,7 +30,7 @@ pub fn App(cx: Scope) -> impl IntoView {
                     if let Ok(arg) = to_value(&Directory { path: &target_dir.get() }) {
                         let result = invoke("retrieve_total_items", arg).await;
                         let js_value = JsValue::from(result);
-                        if let Some(value) =  extract_object_from_dir_items(js_value).await {
+                        if let Some(value) =  DirItems::extract_object(js_value).await {
                             let total_in_text = format!("Folders: {}, Files: {}", value.folders, value.files);
                             set_total_items.set(total_in_text);
                         }
