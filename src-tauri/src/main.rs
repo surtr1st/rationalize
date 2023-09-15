@@ -23,7 +23,7 @@ fn exec(target_dir: &str) -> Result<String, String> {
         if !duplicates.is_empty() {
             let transferred_folder = format!("{}/duplicates", target_dir);
             create_folder(&transferred_folder).unwrap();
-            transfer_duplication(target_dir);
+            transfer_duplication(target_dir, &duplicates);
             open_location(target_dir)?;
         }
         let duration = start.elapsed();

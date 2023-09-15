@@ -56,25 +56,31 @@ pub fn create_folder(dir: &str) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn transfer_duplication(target_dir: &str) {
+pub fn transfer_duplication(target_dir: &str, duplicates: &HashMap<String, String>) {
+    let duplicates_dir = Path::new(&target_dir).join("duplicates");
     retrieve_directory_content(&target_dir)
         .par_iter()
         .for_each(|item| {
-            let filename = item
-                .file_name()
-                .unwrap_or_else(|| panic!("should return file: {}", item.to_str().unwrap()));
             if item.is_file() {
-                let destination =
-                    format!("{}/duplicates/{}", &target_dir, filename.to_str().unwrap());
-                let options = file::CopyOptions::new();
-                file::move_file(
-                    &convert_between_linux_and_windows(&item),
-                    &destination,
-                    &options,
-                )
-                .unwrap_or_else(|_| panic!("should transfer files to {}", &destination));
+                let filename = item
+                    .file_name()
+                    .unwrap_or_else(|| panic!("should return file: {}", item.to_str().unwrap()));
+                for (key, _) in duplicates {
+                    if *key == filename.to_string_lossy().to_string() {
+                        let destination = Path::new(&duplicates_dir).join(key);
+                        let options = file::CopyOptions::new();
+                        file::move_file(
+                            &convert_between_linux_and_windows(&item),
+                            &destination,
+                            &options,
+                        )
+                        .unwrap_or_else(|_| {
+                            panic!("should transfer to dir: {}", &destination.display())
+                        });
+                    }
+                }
             }
-        })
+        });
 }
 
 pub fn open_location(target_dir: &str) -> Result<String, String> {
