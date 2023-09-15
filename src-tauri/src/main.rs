@@ -13,7 +13,6 @@ fn main() {
         .expect("error while running tauri application");
 }
 
-// STATUS: Untested
 #[tauri::command(rename_all = "snake_case")]
 fn exec(target_dir: &str) -> Result<String, String> {
     let start = Instant::now();
@@ -28,8 +27,8 @@ fn exec(target_dir: &str) -> Result<String, String> {
         }
         let duration = start.elapsed();
         return Ok(format!(
-            "Successfully executed! Finished in: {:?}",
-            duration
+            "Successfully executed! Finished in: {:.2}s",
+            duration.as_secs_f64()
         ));
     }
     Err(String::from("An error has occured!"))
