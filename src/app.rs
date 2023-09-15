@@ -10,6 +10,7 @@ use crate::types::*;
 pub fn App(cx: Scope) -> impl IntoView {
     let (target_dir, set_target_dir) = create_signal(cx, String::new());
     let (total_items, set_total_items) = create_signal(cx, String::new());
+    let (executed_time, set_executed_time) = create_signal(cx, String::new());
     let (visible, set_visible) = create_signal(cx, false);
 
     let handle_open_dir = move |event: ev::MouseEvent| {
@@ -50,20 +51,26 @@ pub fn App(cx: Scope) -> impl IntoView {
                 target_dir: &target_dir.get(),
             }) {
                 if let Some(result) = invoke("exec", args).await.as_string() {
-                    if let Ok(options) = to_value(&MessageDialogOptions { title: "Notify" }) {
-                        message(&result, options).await;
-                    }
+                    set_executed_time.set(result);
                 }
             }
         });
     };
- 
 
     let execute_button = move || {
         if visible.get() {
             view! { cx, <button class="exec-button" on:click=handle_execution>"Execute"</button> }
         } else {
             view! { cx, <button class="hidden-exec-button"></button> }
+        }
+    };
+
+    let executed_message_label = move || {
+        if !executed_time.get().is_empty() {
+            view! { cx, <h3>{move || executed_time.get() }</h3> }
+        }
+        else {
+            view! { cx, <h3></h3>}
         }
     };
 
@@ -85,6 +92,7 @@ pub fn App(cx: Scope) -> impl IntoView {
                 <button on:click=handle_open_dir>"Choose Directory"</button>
                 {execute_button}
             </div>
+            {executed_message_label}
         </main>
     }
 }
