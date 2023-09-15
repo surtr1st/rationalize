@@ -1,5 +1,5 @@
 use blake3::Hasher;
-use std::fs::{self, File};
+use std::fs::{self, DirEntry, File};
 use std::io::Read;
 use std::path::PathBuf;
 
@@ -24,6 +24,14 @@ pub fn retrieve_directory_content(dir: &str) -> Vec<PathBuf> {
         .expect("should read the directory specified!")
         .map(|entry| entry.unwrap().path())
         .filter(|path| path.is_file() || path.is_dir())
+        .collect::<Vec<_>>()
+}
+
+pub fn retrieve_directory_files(dir: &str) -> Vec<DirEntry> {
+    fs::read_dir(dir)
+        .expect("should read the directory specified!")
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().map(|ft| ft.is_file()).unwrap_or(false))
         .collect::<Vec<_>>()
 }
 

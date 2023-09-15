@@ -8,6 +8,7 @@ use std::fs;
 use std::io::Error;
 use std::path::Path;
 use std::process::Command;
+use std::sync::{Arc, Mutex, RwLock};
 
 const PARALLEL_THRESHOLD: usize = 50;
 const WINDOWS_EXPLORER: &str = "explorer";
@@ -15,39 +16,65 @@ const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
 
 pub fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, String> {
-    let mut map = HashMap::new();
-    let files = match fs::read_dir(&target_dir) {
-        Ok(content) => content,
-        Err(read_file_error) => panic!("{read_file_error}"),
-    };
-    for file in files {
-        if let Ok(item) = file {
-            if !item.path().is_dir() {
-                let path = item.path();
-                let name = item.file_name();
+    let map = Arc::new(Mutex::new(HashMap::new()));
+    let files = retrieve_directory_files(&target_dir);
 
-                let filepath = path.to_string_lossy();
-                let filename = name.to_string_lossy();
-                let hash_content = match hash(&filepath) {
-                    Ok(content) => content,
-                    Err(hashing_error) => panic!("{hashing_error}"),
-                };
-                map.insert(filename.into_owned(), hash_content);
-            }
+    if files.len() <= PARALLEL_THRESHOLD {
+        for file in files {
+            let mut map = map.lock().unwrap();
+            let item = file.path();
+            let file_path = item.to_string_lossy().to_string();
+            let file_name = item.file_name().unwrap().to_string_lossy();
+
+            let hash_content = match hash(&file_path) {
+                Ok(content) => content,
+                Err(hashing_error) => panic!("{hashing_error}"),
+            };
+            map.insert(file_name.into_owned(), hash_content);
         }
+    } else {
+        files.par_iter().for_each(|file| {
+            let mut map = map.lock().unwrap();
+            let item = file.path();
+            let file_path = item.to_string_lossy().to_string();
+            let file_name = item.file_name().unwrap().to_string_lossy();
+
+            let hash_content = match hash(&file_path) {
+                Ok(content) => content,
+                Err(hashing_error) => panic!("{hashing_error}"),
+            };
+            map.insert(file_name.into_owned(), hash_content);
+        })
     }
-    Ok(map)
+
+    Ok(Arc::try_unwrap(map).unwrap().into_inner().unwrap())
 }
 
 pub fn find_duplicates(data: &HashMap<String, String>) -> HashMap<String, String> {
-    let mut unique_values_set = HashSet::new();
-    let mut duplicates = HashMap::<String, String>::new();
-    for (key, value) in data {
-        if !unique_values_set.insert(value.as_str()) {
-            duplicates.insert(key.to_string(), value.to_string());
+    let unique_values_set = Arc::new(RwLock::new(HashSet::new()));
+    let duplicates = Arc::new(Mutex::new(HashMap::<String, String>::new()));
+
+    if data.len() <= PARALLEL_THRESHOLD {
+        for (key, value) in data {
+            let mut unique_values_set = unique_values_set.write().unwrap();
+            let mut duplicates = duplicates.lock().unwrap();
+
+            if !unique_values_set.insert(value.as_str()) {
+                duplicates.insert(key.to_string(), value.to_string());
+            }
         }
+    } else {
+        data.par_iter().for_each(|(key, value)| {
+            let mut unique_values_set = unique_values_set.write().unwrap();
+            let mut duplicates = duplicates.lock().unwrap();
+
+            if !unique_values_set.insert(value.as_str()) {
+                duplicates.insert(key.to_string(), value.to_string());
+            }
+        });
     }
-    duplicates
+
+    Arc::try_unwrap(duplicates).unwrap().into_inner().unwrap()
 }
 
 pub fn create_folder(dir: &str) -> Result<(), Error> {
