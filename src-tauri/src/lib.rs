@@ -8,6 +8,7 @@ use std::fs;
 use std::io::Error;
 use std::path::Path;
 use std::process::Command;
+use std::sync::{Arc, Mutex, RwLock};
 
 const PARALLEL_THRESHOLD: usize = 50;
 const WINDOWS_EXPLORER: &str = "explorer";
@@ -40,14 +41,30 @@ pub fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, Stri
 }
 
 pub fn find_duplicates(data: &HashMap<String, String>) -> HashMap<String, String> {
-    let mut unique_values_set = HashSet::new();
-    let mut duplicates = HashMap::<String, String>::new();
-    for (key, value) in data {
-        if !unique_values_set.insert(value.as_str()) {
-            duplicates.insert(key.to_string(), value.to_string());
+    let unique_values_set = Arc::new(RwLock::new(HashSet::new()));
+    let duplicates = Arc::new(Mutex::new(HashMap::<String, String>::new()));
+
+    if data.len() <= PARALLEL_THRESHOLD {
+        for (key, value) in data {
+            let mut unique_values_set = unique_values_set.write().unwrap();
+            let mut duplicates = duplicates.lock().unwrap();
+
+            if !unique_values_set.insert(value.as_str()) {
+                duplicates.insert(key.to_string(), value.to_string());
+            }
         }
+    } else {
+        data.par_iter().for_each(|(key, value)| {
+            let mut unique_values_set = unique_values_set.write().unwrap();
+            let mut duplicates = duplicates.lock().unwrap();
+
+            if !unique_values_set.insert(value.as_str()) {
+                duplicates.insert(key.to_string(), value.to_string());
+            }
+        });
     }
-    duplicates
+
+    Arc::try_unwrap(duplicates).unwrap().into_inner().unwrap()
 }
 
 pub fn create_folder(dir: &str) -> Result<(), Error> {
