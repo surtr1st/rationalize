@@ -21,16 +21,18 @@ pub fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, Stri
     };
     for file in files {
         if let Ok(item) = file {
-            let path = item.path();
-            let name = item.file_name();
+            if !item.path().is_dir() {
+                let path = item.path();
+                let name = item.file_name();
 
-            let filepath = path.to_string_lossy();
-            let filename = name.to_string_lossy();
-            let hash_content = match hash(&filepath) {
-                Ok(content) => content,
-                Err(hashing_error) => panic!("{hashing_error}"),
-            };
-            map.insert(filename.into_owned(), hash_content);
+                let filepath = path.to_string_lossy();
+                let filename = name.to_string_lossy();
+                let hash_content = match hash(&filepath) {
+                    Ok(content) => content,
+                    Err(hashing_error) => panic!("{hashing_error}"),
+                };
+                map.insert(filename.into_owned(), hash_content);
+            }
         }
     }
     Ok(map)
@@ -62,7 +64,8 @@ pub fn transfer_duplication(target_dir: &str) {
                 .file_name()
                 .unwrap_or_else(|| panic!("should return file: {}", item.to_str().unwrap()));
             if item.is_file() {
-                let destination = format!("{}/{}", &target_dir, filename.to_str().unwrap());
+                let destination =
+                    format!("{}/duplicates/{}", &target_dir, filename.to_str().unwrap());
                 let options = file::CopyOptions::new();
                 file::move_file(
                     &convert_between_linux_and_windows(&item),
