@@ -38,12 +38,12 @@ pub fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, Stri
     Ok(map)
 }
 
-pub fn find_duplicates(data: &HashMap<String, String>) -> Vec<&str> {
+pub fn find_duplicates(data: &HashMap<String, String>) -> HashMap<String, String> {
     let mut unique_values_set = HashSet::new();
-    let mut duplicates = vec![];
+    let mut duplicates = HashMap::<String, String>::new();
     for (key, value) in data {
         if !unique_values_set.insert(value.as_str()) {
-            duplicates.push(key.as_str());
+            duplicates.insert(key.to_string(), value.to_string());
         }
     }
     duplicates
