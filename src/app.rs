@@ -12,6 +12,9 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "dialog"])]
     async fn open(args: JsValue) -> JsValue;
+
+    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "dialog"])]
+    async fn message(message: &str, args: JsValue) -> JsValue;
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -36,6 +39,11 @@ struct DirItems {
     files: f64
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+struct MessageDialogOptions<'mdo> {
+    title: &'mdo str,
+}
+
 async fn extract_object_from_dir_items(js_value: JsValue) -> Option<DirItems> {
     let js_object = js_value.dyn_into::<Object>().ok()?;
     
@@ -56,9 +64,7 @@ async fn extract_object_from_dir_items(js_value: JsValue) -> Option<DirItems> {
 pub fn App(cx: Scope) -> impl IntoView {
     let (target_dir, set_target_dir) = create_signal(cx, String::new());
     let (total_items, set_total_items) = create_signal(cx, String::new());
-    let (executed_time, set_executed_time) = create_signal(cx, String::new());
     let (visible, set_visible) = create_signal(cx, false);
-    let (finished_executing, set_finished_executing) = create_signal(cx, false);
 
     let handle_open_dir = move |event: ev::MouseEvent| {
         event.prevent_default();
@@ -98,8 +104,9 @@ pub fn App(cx: Scope) -> impl IntoView {
                 target_dir: &target_dir.get(),
             }) {
                 if let Some(result) = invoke("exec", args).await.as_string() {
-                    set_finished_executing.set(true);
-                    set_executed_time.set(result);
+                    if let Ok(options) = to_value(&MessageDialogOptions { title: "Notify" }) {
+                        message(&result, options).await;
+                    }
                 }
             }
         });
@@ -111,19 +118,6 @@ pub fn App(cx: Scope) -> impl IntoView {
             view! { cx, <button class="exec-button" on:click=handle_execution>"Execute"</button> }
         } else {
             view! { cx, <button class="hidden-exec-button"></button> }
-        }
-    };
-
-    let executed_time_label = move || {
-        if finished_executing.get() {
-            view! { cx, 
-                <h3 class="exec-time">
-                    { move || executed_time.get() }
-                </h3>
-            }
-        }
-        else {
-            view! { cx, <h3></h3> }
         }
     };
 
@@ -144,9 +138,6 @@ pub fn App(cx: Scope) -> impl IntoView {
             <div class="action-section">
                 <button on:click=handle_open_dir>"Choose Directory"</button>
                 {execute_button}
-            </div>
-            <div class="finish-section">
-                {executed_time_label}
             </div>
         </main>
     }
