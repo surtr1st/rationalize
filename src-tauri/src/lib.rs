@@ -9,6 +9,7 @@ use std::io::Error;
 use std::path::Path;
 use std::process::Command;
 
+const PARALLEL_THRESHOLD: usize = 50;
 const WINDOWS_EXPLORER: &str = "explorer";
 const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
@@ -65,24 +66,45 @@ pub fn transfer_duplication(target_dir: &str, duplicates: &HashMap<String, Strin
         .filter(|item| item.is_file())
         .collect();
 
-    files.par_iter().for_each(|item| {
-        let filename = item
-            .file_name()
-            .unwrap_or_else(|| panic!("should return file: {}", item.to_str().unwrap()))
-            .to_string_lossy()
-            .to_string();
+    if files.len() <= PARALLEL_THRESHOLD {
+        files.iter().for_each(|item| {
+            let filename = item
+                .file_name()
+                .unwrap_or_else(|| panic!("should return file: {}", item.to_str().unwrap()))
+                .to_string_lossy()
+                .to_string();
 
-        if duplicates.contains_key(&filename) {
-            let destination = Path::new(&duplicates_dir).join(filename);
-            let options = file::CopyOptions::new();
-            file::move_file(
-                &convert_between_linux_and_windows(&item),
-                &destination,
-                &options,
-            )
-            .unwrap_or_else(|_| panic!("should transfer to dir: {}", &destination.display()));
-        }
-    });
+            if duplicates.contains_key(&filename) {
+                let destination = Path::new(&duplicates_dir).join(filename);
+                let options = file::CopyOptions::new();
+                file::move_file(
+                    &convert_between_linux_and_windows(&item),
+                    &destination,
+                    &options,
+                )
+                .unwrap_or_else(|_| panic!("should transfer to dir: {}", &destination.display()));
+            }
+        });
+    } else {
+        files.par_iter().for_each(|item| {
+            let filename = item
+                .file_name()
+                .unwrap_or_else(|| panic!("should return file: {}", item.to_str().unwrap()))
+                .to_string_lossy()
+                .to_string();
+
+            if duplicates.contains_key(&filename) {
+                let destination = Path::new(&duplicates_dir).join(filename);
+                let options = file::CopyOptions::new();
+                file::move_file(
+                    &convert_between_linux_and_windows(&item),
+                    &destination,
+                    &options,
+                )
+                .unwrap_or_else(|_| panic!("should transfer to dir: {}", &destination.display()));
+            }
+        });
+    }
 }
 
 pub fn open_location(target_dir: &str) -> Result<String, String> {
