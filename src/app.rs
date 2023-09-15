@@ -56,7 +56,9 @@ async fn extract_object_from_dir_items(js_value: JsValue) -> Option<DirItems> {
 pub fn App(cx: Scope) -> impl IntoView {
     let (target_dir, set_target_dir) = create_signal(cx, String::new());
     let (total_items, set_total_items) = create_signal(cx, String::new());
+    let (executed_time, set_executed_time) = create_signal(cx, String::new());
     let (visible, set_visible) = create_signal(cx, false);
+    let (finished_executing, set_finished_executing) = create_signal(cx, false);
 
     let handle_open_dir = move |event: ev::MouseEvent| {
         event.prevent_default();
@@ -95,7 +97,10 @@ pub fn App(cx: Scope) -> impl IntoView {
             if let Ok(args) = to_value(&ExecutionArgs {
                 target_dir: &target_dir.get(),
             }) {
-                invoke("exec", args).await;
+                if let Some(result) = invoke("exec", args).await.as_string() {
+                    set_finished_executing.set(true);
+                    set_executed_time.set(result);
+                }
             }
         });
     };
@@ -106,6 +111,19 @@ pub fn App(cx: Scope) -> impl IntoView {
             view! { cx, <button class="exec-button" on:click=handle_execution>"Execute"</button> }
         } else {
             view! { cx, <button class="hidden-exec-button"></button> }
+        }
+    };
+
+    let executed_time_label = move || {
+        if finished_executing.get() {
+            view! { cx, 
+                <h3 class="exec-time">
+                    { move || executed_time.get() }
+                </h3>
+            }
+        }
+        else {
+            view! { cx, <h3></h3> }
         }
     };
 
@@ -126,6 +144,9 @@ pub fn App(cx: Scope) -> impl IntoView {
             <div class="action-section">
                 <button on:click=handle_open_dir>"Choose Directory"</button>
                 {execute_button}
+            </div>
+            <div class="finish-section">
+                {executed_time_label}
             </div>
         </main>
     }
