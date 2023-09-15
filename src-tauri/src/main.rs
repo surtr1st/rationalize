@@ -14,7 +14,7 @@ fn main() {
 }
 
 // STATUS: Untested
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 fn exec(target_dir: &str) -> Result<String, String> {
     let start = Instant::now();
     let hash_files = read_hash_files(target_dir);

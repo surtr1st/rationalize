@@ -92,10 +92,11 @@ pub fn App(cx: Scope) -> impl IntoView {
             if target_dir.get().is_empty() {
                 return;
             }
-            let args = to_value(&ExecutionArgs {
+            if let Ok(args) = to_value(&ExecutionArgs {
                 target_dir: &target_dir.get(),
-            }).unwrap();
-            invoke("exec", args).await;
+            }) {
+                invoke("exec", args).await;
+            }
         });
     };
  
