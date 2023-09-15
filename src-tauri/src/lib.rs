@@ -16,28 +16,38 @@ const LINUX_EXPLORER: &str = "xdg-open";
 const MACOS_EXPLORER: &str = "open";
 
 pub fn read_hash_files(target_dir: &str) -> Result<HashMap<String, String>, String> {
-    let mut map = HashMap::new();
-    let files = match fs::read_dir(&target_dir) {
-        Ok(content) => content,
-        Err(read_file_error) => panic!("{read_file_error}"),
-    };
-    for file in files {
-        if let Ok(item) = file {
-            if !item.path().is_dir() {
-                let path = item.path();
-                let name = item.file_name();
+    let map = Arc::new(Mutex::new(HashMap::new()));
+    let files = retrieve_directory_files(&target_dir);
 
-                let filepath = path.to_string_lossy();
-                let filename = name.to_string_lossy();
-                let hash_content = match hash(&filepath) {
-                    Ok(content) => content,
-                    Err(hashing_error) => panic!("{hashing_error}"),
-                };
-                map.insert(filename.into_owned(), hash_content);
-            }
+    if files.len() <= PARALLEL_THRESHOLD {
+        for file in files {
+            let mut map = map.lock().unwrap();
+            let item = file.path();
+            let file_path = item.to_string_lossy().to_string();
+            let file_name = item.file_name().unwrap().to_string_lossy();
+
+            let hash_content = match hash(&file_path) {
+                Ok(content) => content,
+                Err(hashing_error) => panic!("{hashing_error}"),
+            };
+            map.insert(file_name.into_owned(), hash_content);
         }
+    } else {
+        files.par_iter().for_each(|file| {
+            let mut map = map.lock().unwrap();
+            let item = file.path();
+            let file_path = item.to_string_lossy().to_string();
+            let file_name = item.file_name().unwrap().to_string_lossy();
+
+            let hash_content = match hash(&file_path) {
+                Ok(content) => content,
+                Err(hashing_error) => panic!("{hashing_error}"),
+            };
+            map.insert(file_name.into_owned(), hash_content);
+        })
     }
-    Ok(map)
+
+    Ok(Arc::try_unwrap(map).unwrap().into_inner().unwrap())
 }
 
 pub fn find_duplicates(data: &HashMap<String, String>) -> HashMap<String, String> {
