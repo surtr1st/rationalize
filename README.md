@@ -1,7 +1,4 @@
-# Tauri + Leptos
+## About
 
-This template should help get you started developing with Tauri and Leptos.
+- __Rationalize__ is a desktop-based application created to isolate the duplication/copy of files to another directory. The name _rationalize_ has the meaning _to reorganize and simplify by eliminating duplication or inefficiency_.
 
-## Recommended IDE Setup
-
-[VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer).
